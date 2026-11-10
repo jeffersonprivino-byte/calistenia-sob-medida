@@ -34,13 +34,17 @@ img{max-width:100%}
   --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
   --r:12px;
+  --fig-skin:#D9B99B; --fig-top:#2B45D4; --fig-bottom:#2A3142; --fig-shoe:#F4F5F8; --fig-hair:#3A2E28;
+  --fig-prop:#C9B08E; --fig-floor:#C5CAD6; --fig-shadow:rgba(20,26,42,.16); --demo-bg:#F6F7FA; --scrim:rgba(15,19,28,.6);
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0F131C; --surface:#171C28; --ink:#E8EBF2; --muted:#9AA3B5; --line:#2A3142;
-  --accent:#8496FF; --accent-ink:#0F131C; --soft:#1F2742; --hot:#FF8059; --ok:#4CC38A; --ok-soft:#16352A; color-scheme:dark}}
+  --accent:#8496FF; --accent-ink:#0F131C; --soft:#1F2742; --hot:#FF8059; --ok:#4CC38A; --ok-soft:#16352A;
+  --fig-top:#6F82F2; --fig-bottom:#56607C; --fig-shoe:#DCE0E8; --fig-prop:#7A6A55; --fig-floor:#3A4256; --fig-shadow:rgba(0,0,0,.35); --demo-bg:#1B2130; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0F131C; --surface:#171C28; --ink:#E8EBF2; --muted:#9AA3B5; --line:#2A3142;
-  --accent:#8496FF; --accent-ink:#0F131C; --soft:#1F2742; --hot:#FF8059; --ok:#4CC38A; --ok-soft:#16352A; color-scheme:dark}
+  --accent:#8496FF; --accent-ink:#0F131C; --soft:#1F2742; --hot:#FF8059; --ok:#4CC38A; --ok-soft:#16352A;
+  --fig-top:#6F82F2; --fig-bottom:#56607C; --fig-shoe:#DCE0E8; --fig-prop:#7A6A55; --fig-floor:#3A4256; --fig-shadow:rgba(0,0,0,.35); --demo-bg:#1B2130; color-scheme:dark}
 
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;
@@ -182,8 +186,25 @@ button{font:inherit;color:inherit;cursor:pointer}
 .timer .nx{color:var(--muted)}
 .timer .ctl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:auto}
 .timer .ctl .btn{padding:14px 8px}
+.how{background:none;border:0;padding:0;margin-left:8px;color:var(--accent);font-weight:600;font-size:.82rem;white-space:nowrap}
+.how:hover{text-decoration:underline}
+.demo{display:block;width:100%;max-width:100%;aspect-ratio:16/10;border-radius:10px;background:var(--demo-bg)}
+.timer .demo{aspect-ratio:auto;height:min(30vh,260px)}
+.timer .clk{margin-top:0;font-size:clamp(4rem,20vw,7.5rem)}
+.sheet{position:fixed;inset:0;z-index:70;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center;
+  padding:calc(12px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px))}
+.sheet-in{background:var(--surface);color:var(--ink);width:100%;max-width:720px;max-height:100%;overflow:auto;border-radius:16px 16px 0 0;
+  padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+@media (min-width:760px){.sheet{align-items:center;padding-bottom:12px}.sheet-in{border-radius:16px}}
+.tabs{display:flex;gap:6px}
+.tabs button{border:0;border-radius:99px;padding:8px 16px;font-weight:600;background:var(--soft);color:var(--ink)}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.vid{position:relative;width:100%;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#000}
+.vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.vid-off{display:flex;flex-direction:column;gap:10px;align-items:flex-start;background:var(--soft);border-radius:10px;padding:16px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
+<script>window.__SITE__ = true;</script>
 </head>
 <body>
 
@@ -255,8 +276,10 @@ button{font:inherit;color:inherit;cursor:pointer}
   <div class="in">
     <div class="row" style="justify-content:space-between"><span class="ph" id="tph"></span><span class="eyebrow mono" id="tstep"></span></div>
     <div class="bar"><i id="tbar" style="width:0"></i></div>
+    <canvas class="demo" id="tdemo" aria-hidden="true"></canvas>
     <div class="nm" id="tnm"></div>
     <p class="muted" id="tcue"></p>
+    <div class="row"><button class="btn small ghost" type="button" id="tvid">▶ Ver vídeo do exercício</button></div>
     <div class="clk" id="tclk">0:00</div>
     <p class="nx" id="tnx"></p>
     <div class="ctl">
@@ -265,6 +288,16 @@ button{font:inherit;color:inherit;cursor:pointer}
       <button class="btn ghost" id="tskip" type="button">Pular</button>
       <button class="btn ghost" id="tclose" type="button">Sair</button>
     </div>
+  </div>
+</div>
+
+<!-- COMO FAZER -->
+<div id="how" class="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="howT">
+  <div class="sheet-in">
+    <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><h3 id="howT"></h3><button class="btn small ghost" type="button" id="howX">Fechar</button></div>
+    <div class="tabs" role="tablist"><button type="button" role="tab" data-tab="video">Vídeo</button><button type="button" role="tab" data-tab="anim">Animação</button></div>
+    <div id="howBody"></div>
+    <p class="muted" id="howCue"></p>
   </div>
 </div>
 
@@ -670,7 +703,8 @@ function openPlan(a){
   renderResult(); show('result');
 }
 
-const exLi = (id, i, extra) => `<li class="ex"><span class="i">${i}</span><span><b>${E[id].n}</b>${extra||''}</span><p>${E[id].c}</p></li>`;
+const howBtn = id => `<button class="how" type="button" data-how="${id}">▶ Como fazer</button>`;
+const exLi = (id, i, extra) => `<li class="ex"><span class="i">${i}</span><span><b>${E[id].n}</b>${extra||''}${howBtn(id)}</span><p>${E[id].c}</p></li>`;
 
 function dayDetail(d){
   if(d.rest){
@@ -684,7 +718,7 @@ function dayDetail(d){
     <button class="btn small ghost" type="button" data-done="${d.n}">${done ? 'Desmarcar' : 'Marcar como feito'}</button></div>`;
   h += `<div class="blk"><div class="blk-h"><h4>Aquecimento</h4><span class="eyebrow mono">${s.warm.length} × 30 s</span></div><ul class="exs">${s.warm.map((id,i)=>exLi(id,i+1)).join('')}</ul></div>`;
   if(s.type==='T'){
-    h += `<div class="blk"><div class="blk-h"><h4>Testes</h4><span class="eyebrow mono">90 s de descanso entre eles</span></div><ul class="exs">${s.tests.map((t,i)=>`<li class="ex"><span class="i">${i+1}</span><span><b>${E[t.id].n}</b></span><p>${t.how} ${E[t.id].c}</p></li>`).join('')}</ul>
+    h += `<div class="blk"><div class="blk-h"><h4>Testes</h4><span class="eyebrow mono">90 s de descanso entre eles</span></div><ul class="exs">${s.tests.map((t,i)=>`<li class="ex"><span class="i">${i+1}</span><span><b>${E[t.id].n}</b>${howBtn(t.id)}</span><p>${t.how} ${E[t.id].c}</p></li>`).join('')}</ul>
       <p class="note">Anote os números e compare com o que você respondeu no quiz. Se melhorou bastante, refaça o quiz para gerar o próximo ciclo um nível acima.</p></div>`;
   } else {
     h += `<div class="blk"><div class="blk-h"><h4>Circuito principal</h4><span class="eyebrow mono">${s.rounds} rodadas · ${s.work} s trabalho / ${s.rest} s descanso</span></div>
@@ -817,6 +851,8 @@ $('#result').addEventListener('click', e => {
     $('#detail').innerHTML = dayDetail(PLAN.days[sel-1]);
     if(innerWidth < 860) $('#detail').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start'});
     return; }
+  const hw = e.target.closest('[data-how]');
+  if(hw){ openHow(hw.dataset.how); return; }
   const dn = e.target.closest('[data-done]');
   if(dn){ toggleDone(+dn.dataset.done); return; }
   const st = e.target.closest('[data-start]');
@@ -832,6 +868,387 @@ function toggleDone(n){
   if(!isExample) store.set('calis.done', [...PLAN.done]);
   renderResult();
 }
+
+/* ---------- vídeos do YouTube (id, título) ---------- */
+const V = {
+  marcha:['Co1F2qhsZe4','Marcha estacionária'], circBracos:['4yPoBcn5ycA','Rotação de braços para ombros saudáveis'], gatoVaca:['40Y1rukJs4E','Postura do gato/vaca'],
+  rotQuadril:['v5WHcBcMfQo','Mobilidade de quadril'], agachAquec:['h5ZOoULsAJo','Agachamento com o peso corporal'], polichinelo:['KZ2IASfrOFw','Polichinelo: como fazer'],
+  polichineloPasso:['K8YKyoe_zo4','Polichinelo sem salto'], maiorDoMundo:['XjItdR6S8kY','Alongamento melhor do mundo'], flexParede:['msMPUMk8Z7U','Flexão apoiado na parede'],
+  flexInclinada:['5mKAQdphXJs','Flexão inclinada'], flexJoelhos:['oTmPth0J55E','Flexões com joelhos apoiados'], flexao:['H23VZ7IZwG4','A melhor forma de executar a flexão de braço'],
+  flexDiamante:['RS9qlb7Fl1U','Como fazer flexão diamante'], flexDeclinada:['AkPuVm6P2rQ','Flexão declinada'], flexArqueiro:['91e47oNbSdA','Archer push-ups (flexão arqueiro)'],
+  mergulhoCadeira:['gAvstToO_hg','Tríceps na cadeira'], pranchaSobeDesce:['wGiNsC_fnQM','Prancha sobe e desce'], sentaLevanta:['NuJOwwDpYJQ','Senta e levanta da cadeira'],
+  agachamento:['CaTbpJH49i4','Agachamento livre passo a passo'], agachPausa:['IISedx5SajE','Agachamento com isometria'], afundo:['dZNzP4eUKdY','Afundo alternado'],
+  bulgaro:['gmDBJYTgRUA','Agachamento búlgaro da forma correta'], agachSalto:['5HqB1xSgmpQ','Agachamento com salto'], pistolAssist:['mffFOcfUkTU','Pistol assistido'],
+  ponte:['6jS6aH-78w4','Ponte de glúteo'], wallSit:['sJ-_tp5ppMY','Cadeira isométrica na parede'], ponteUni:['GuQg3k0qsm0','Elevação pélvica unilateral no solo'],
+  panturrilha:['3xOfTYxIdLo','Panturrilha em pé, no chão'], superY:['jQbyjhC0HjY','Superman deitado'], snowAngel:['LW-SlgTfd-o','Prone snow angels'],
+  toalhaIso:['S1fCzRnR7Ys','Remada com toalha'], remadaMesaJoelhos:['Mb9PD3vIkjg','Remada inversa na mesa'], remadaMesa:['VpLubqQiMtk','Remada invertida em casa'],
+  remadaMesaPes:['rmoOuzp2ZKw','Remada invertida (pés elevados na versão da barra)'], deadBug:['uQfzuKBMJeE','Dead bug'], birdDog:['Y_NGGmPH8zA','Bird dog: execução correta'],
+  pranchaJoelhos:['LNEyZJHA228','Prancha com joelhos'], prancha:['9dn5Fb3cSoE','Como fazer prancha corretamente'], pranchaToque:['BzKKg_vrwrA','Prancha com toque no ombro'],
+  hollow:['9ryjFfS1WDA','Hollow hold (canoinha)'], pranchaLateral:['RTxAFDK1OMw','Prancha frontal e lateral'], elevPernas:['oq4Xb_xI618','Abdominal infra no solo'],
+  vUp:['UzVne18hplg','Abdominal canivete (V-up)'], bicicleta:['fjIhgwe_htI','Abdominal bicicleta'], marchaRapida:['u28Jv3Y4BtE','Corrida no lugar com joelhos elevados'],
+  boxe:['65vyZJHVCEo','Socos jab e direto'], escaladorLento:['8wuUiihTbdw','Mountain climber (escalador)'], escalador:['DTVVwQs-zoM','Mountain climber do jeito certo'],
+  burpeeSem:['0pttIpAnjpE','Burpee sem flexão de braços'], skater:['tLasHQemvVg','Exercício patinador'], burpee:['CrGAnJEfcmY','Burpee da forma correta'],
+  peitoralParede:['6Be-s3RwVp4','Alongamento de peitoral na parede'], crianca:['Lk5lVVIM3JM','Postura da criança'], posterior:['LEuNrkj_FPY','Alongamento de posterior de coxa'],
+  flexorQuadril:['fdEHZSwgwOM','Alongamento do iliopsoas'], torcao:['TajqJjwJqYw','Alongamento para lombar deitado'], respiracao:['-alawH0bGW4','Respiração diafragmática passo a passo']
+};
+
+/* ---------- animações próprias: manequim com volume, desenhado em canvas ---------- */
+const Demo = (() => {
+  const R = Math.PI/180;
+  const dA = a => [Math.sin(a*R), -Math.cos(a*R)];               // 0 = para baixo, 90 = para a frente, 180 = para cima
+  const angOf = v => Math.atan2(v[0], -v[1])/R;
+  const ad = (a,b) => [a[0]+b[0], a[1]+b[1]], sb = (a,b) => [a[0]-b[0], a[1]-b[1]], ml = (a,k) => [a[0]*k, a[1]*k], ln = v => Math.hypot(v[0], v[1]);
+  const rt = (v,a) => { const c = Math.cos(a*R), s = Math.sin(a*R); return [v[0]*c - v[1]*s, v[0]*s + v[1]*c]; };
+  const L = {T:0.5, NK:0.17, HR:0.105, UA:0.29, FA:0.29, TH:0.43, SH:0.43, FT:0.13};
+
+  function ik(root, tgt, a, b, d){
+    const v = sb(tgt, root); let D = ln(v); const u = D > 1e-6 ? ml(v, 1/D) : [0,-1];
+    if(D >= a+b-1e-4) return ad(root, ml(u, a));
+    D = Math.max(D, Math.abs(a-b)+1e-3);
+    const c = (a*a + D*D - b*b)/(2*a*D);
+    return ad(root, ml(rt(u, d*Math.acos(Math.max(-1, Math.min(1, c)))/R), a));
+  }
+  function limb(root, sp, a, b, defD){
+    if(Array.isArray(sp)){ const j = ad(root, ml(dA(sp[0]), a)); return [j, ad(j, ml(dA(sp[1]), b)), sp[1], false]; }
+    const j = ik(root, sp.p, a, b, sp.d ?? defD);
+    let e = sp.p.slice(); const v = sb(e, j), D = ln(v); if(D > b) e = ad(j, ml(v, b/D));
+    return [j, e, angOf(sb(e, j)), true];
+  }
+  function shiftAll(o, dy){
+    for(const k in o){ if(k==='p' || k==='view' || k==='pp') continue; const v = o[k];
+      if(Array.isArray(v) && v.length===2 && typeof v[0]==='number' && typeof v[1]==='number') v[1] += dy;
+      else if(v && typeof v==='object') shiftAll(v, dy); }
+  }
+  function pts(o){
+    const r = [[o.head, L.HR], [o.hip, 0.1]];
+    for(const k of ['N','F']){ const a = o.arm[k], l = o.leg[k]; r.push([a[0],0.045],[a[1],0.035],[l[0],0.06],[l[1],0.045]); if(l[4]) r.push([l[4],0.03]); }
+    return r;
+  }
+  function fk(p, view){
+    const hip = p.hip.slice(), s = dA(p.T), o = {view, p};
+    if(view==='front'){
+      const pp = [s[1], -s[0]], sc = ad(hip, ml(s, L.T)), m = p.mirror===false ? 1 : -1;
+      const neg = sp => Array.isArray(sp) ? sp.map(x => x*m) : sp;
+      o.hip = hip; o.sc = sc; o.pp = pp;
+      o.sh = {N: ad(sc, ml(pp, 0.18)), F: ad(sc, ml(pp, -0.18))};
+      o.hp = {N: ad(hip, ml(pp, 0.09)), F: ad(hip, ml(pp, -0.09))};
+      o.arm = {N: limb(o.sh.N, p.aN, L.UA, L.FA, -1), F: limb(o.sh.F, neg(p.aF), L.UA, L.FA, -1)};
+      o.leg = {N: limb(o.hp.N, p.lN, L.TH, L.SH, 1), F: limb(o.hp.F, neg(p.lF), L.TH, L.SH, 1)};
+      for(const k of ['N','F']){ const l = o.leg[k]; l.push(ad(l[1], ml(dA(l[2]), 0.05))); }
+      o.head = ad(sc, ml(dA(p.T + (p.H||0)), L.NK));
+    } else {
+      const sh = ad(hip, ml(s, L.T));
+      o.hip = hip; o.shc = sh;
+      o.arm = {N: limb(sh, p.aN, L.UA, L.FA, -1), F: limb(sh, p.aF, L.UA, L.FA, -1)};
+      o.leg = {N: limb(hip, p.lN, L.TH, L.SH, 1), F: limb(hip, p.lF, L.TH, L.SH, 1)};
+      o.head = ad(sh, ml(dA(p.T + (p.H||0)), L.NK));
+      for(const k of ['N','F']){ const l = o.leg[k]; let ft = p['ft'+k];
+        if(ft==null) ft = (l[3] && l[1][1] < 0.14) ? 90*(p.fdir||1) : l[2] + 90*(p.face||1);
+        l.push(ad(l[1], ml(dA(ft), L.FT))); }
+    }
+    if(p.g){ let mn = Infinity; for(const [q,r] of pts(o)) mn = Math.min(mn, q[1]-r); shiftAll(o, -mn + (p.lift||0)); }
+    else if(p.lift) shiftAll(o, p.lift);
+    return o;
+  }
+
+  /* interpolação */
+  function lv(a, b, t, key){
+    if(typeof a==='number' && typeof b==='number'){
+      if(key==='ang'){ const d = ((b-a)%360 + 540)%360 - 180; return a + d*t; }
+      return a + (b-a)*t;
+    }
+    if(Array.isArray(a) && Array.isArray(b)) return a.map((x,i) => lv(x, b[i], t, key==='limb' ? 'ang' : key));
+    if(a && b && typeof a==='object'){ const o = {};
+      for(const k in a){ o[k] = (k in b) ? lv(a[k], b[k], t, (['aN','aF','lN','lF'].includes(k) && Array.isArray(a[k])) ? 'limb' : (['T','H','ftN','ftF'].includes(k) ? 'ang' : k)) : a[k]; }
+      return o; }
+    return t < 0.5 ? a : b;
+  }
+  const ease = t => t*t*(3-2*t);
+
+  /* construtores de pose */
+  const DEF = {H:0, C:0, B:0, lift:0, face:1};
+  const ST = (o={}) => Object.assign({hip:[0,0.92], T:180, lN:{p:[0.03,0.085],d:1}, lF:{p:[-0.03,0.085],d:1}, aN:[8,14], aF:[-6,4]}, o);
+  const PL = (phi, o={}) => { const A = o.A || [-0.9,0.10], a = 90+phi;
+    const r = Object.assign({hip: ad(A, ml(dA(a), 0.86)), T:a, lN:[a+180,a+180], lF:[a+180,a+180], aN:[0,0], aF:[0,0], ftN:5, ftF:5}, o);
+    if(o.hand){ const d = o.hd ?? -1; r.aN = {p:o.hand, d}; r.aF = {p:[o.hand[0]-0.025, o.hand[1]], d}; }
+    delete r.A; delete r.hand; delete r.hd; return r; };
+  const KP = (phi, o={}) => { const K = [-0.42,0.07], a = 90+phi;
+    const r = Object.assign({hip: ad(K, ml(dA(a), 0.43)), T:a, lN:[a+180,-150], lF:[a+180,-152], aN:[0,0], aF:[0,0]}, o);
+    if(o.hand){ r.aN = {p:o.hand, d:-1}; r.aF = {p:[o.hand[0]-0.025, o.hand[1]], d:-1}; delete r.hand; } return r; };
+  const SUP = (o={}) => { const S = [-0.25,0.13], T = o.T ?? -90;
+    const r = Object.assign({hip: sb(S, ml(dA(T), 0.5)), T, aN:[90,90], aF:[88,88], lN:[92,92], lF:[90,90]}, o);
+    r.H = (o.ha ?? -90) - T; delete r.ha; return r; };
+  const QD = (o={}) => Object.assign({hip:[-0.25,0.47], T:105, H:-15, aN:[0,0], aF:[2,2], lN:[0,-90], lF:[2,-90], g:true}, o);
+  const PR = (o={}) => Object.assign({hip:[0,0.13], T:90, lN:[-90,-90], lF:[-91,-91], aN:[95,95], aF:[93,93], g:true}, o);
+  const FS = (S, T, o={}) => Object.assign({hip: sb(S, ml(dA(T), 0.5)), T, face:-1}, o);
+  const pin = (x, y, d=1) => ({p:[x,y], d});
+
+  const SQ = ST({hip:[-0.30,0.47], T:145, aN:[85,88], aF:[80,84]});
+  const HF = {hand:[0.36,0.03]};
+  const ROW = {aN:pin(0.22,0.73), aF:pin(0.20,0.73), lN:pin(-0.60,0.085,-1), lF:pin(-0.63,0.085,-1), fdir:-1};
+  const BR = {lN:pin(0.62,0.085), lF:pin(0.58,0.085)};
+  const GU = {hip:[0,0.87], lN:pin(0.18,0.085), lF:pin(-0.18,0.085), aN:[30,160], aF:[25,165]};
+  const LUN = {hip:[0,0.36], T:118, H:-10, lN:pin(0.45,0.085), lF:pin(-0.65,0.10), ftF:35, aF:pin(0.30,0.03,-1), aN:[25,25]};
+  const FX = {T:180, aF:[5,5], lN:[3,3], lF:[3,3]};
+  const BS = {hip:[0.40,0], T:180, lN:[2,0], lF:[-2,0], aN:[8,10], aF:[5,8], g:true};
+  const BQ = {hip:[-0.12,0], T:108, H:-10, lN:[88,-12], lF:[86,-14], aN:[2,2], aF:[0,0], g:true};
+  const BP = {hip:[-0.09,0], T:112, lN:[292,292], lF:[292,292], aN:[0,0], aF:[0,0], ftN:5, ftF:5, g:true};
+  const BD = {hip:[-0.08,0], T:94, lN:[274,274], lF:[274,274], aN:[-75,75], aF:[-75,75], ftN:5, ftF:5, g:true};
+  const BJ = {hip:[0.40,0], T:180, lN:[0,0], lF:[0,0], aN:[175,178], aF:[170,175], ftN:30, ftF:30, g:true, lift:0.18};
+  const PB = PL(22);
+  const DB = {aN:[180,180], aF:[175,175], lN:[180,90], lF:[175,92]};
+
+  const S = {
+    marcha:{f:[ST({lN:[70,-5], lF:[2,0], aN:[-25,-15], aF:[30,75]}), ST({lN:[2,0], lF:[70,-5], aN:[30,75], aF:[-25,-15]})], t:[0.55,0.55]},
+    marchaRapida:{f:[ST({hip:[0,0.93], lN:[95,15], lF:[2,0], aN:[-40,-20], aF:[50,100]}), ST({hip:[0,0.93], lN:[2,0], lF:[95,15], aN:[50,100], aF:[-40,-20]})], t:[0.3,0.3]},
+    circBracos:{f:[0,90,180,270].map(a => ST({aN:[a,a], aF:[a+12,a+12]})), t:[0.35,0.35,0.35,0.35]},
+    gatoVaca:{f:[QD({C:0.07, H:-45}), QD({C:-0.06, H:10})], t:[1.5,1.5]},
+    rotQuadril:{f:[ST({hip:[0.06,0.92], T:176, aN:[-30,60], aF:[-28,58]}), ST({hip:[0,0.90], aN:[-30,60], aF:[-28,58]}), ST({hip:[-0.06,0.92], T:184, aN:[-30,60], aF:[-28,58]}), ST({hip:[0,0.94], aN:[-30,60], aF:[-28,58]})], t:[0.45,0.45,0.45,0.45]},
+    agachAquec:{f:[ST({aN:[10,15]}), ST({hip:[-0.18,0.64], T:160, aN:[70,80], aF:[66,76]})], t:[1.4,1.0]},
+    polichinelo:{v:'front', f:[{hip:[0,0.92], T:180, aN:[8,8], aF:[8,8], lN:[3,3], lF:[3,3]}, {hip:[0,1.0], T:180, aN:[165,172], aF:[165,172], lN:[16,16], lF:[16,16]}], t:[0.3,0.3]},
+    polichineloPasso:{v:'front', f:[{hip:[0,0.92], T:180, aN:[8,8], aF:[8,8], lN:[3,3], lF:[3,3]}, {hip:[0.03,0.90], T:180, aN:[160,166], aF:[160,166], lN:[22,22], lF:[2,2]}, {hip:[0,0.92], T:180, aN:[8,8], aF:[8,8], lN:[3,3], lF:[3,3]}, {hip:[-0.03,0.90], T:180, aN:[160,166], aF:[160,166], lN:[2,2], lF:[22,22]}], t:[0.42,0.42,0.42,0.42]},
+    maiorDoMundo:{f:[LUN, {...LUN, aN:[175,175], H:25}, {...LUN, aN:[175,175], H:25}], t:[1.3,0.8,1.0]},
+
+    flexParede:{props:[{k:'wall', x:0.47, side:'r'}], f:[PL(70,{A:[-0.6,0.085], hand:[0.44,1.25], ftN:90, ftF:90}), PL(55,{A:[-0.6,0.085], hand:[0.44,1.25], ftN:90, ftF:90})], t:[1.0,0.9]},
+    flexInclinada:{props:[{k:'bench', x0:0.18, x1:0.62, h:0.45}], f:[PL(42,{hand:[0.22,0.47]}), PL(20,{hand:[0.22,0.47]})], t:[1.0,0.9]},
+    flexJoelhos:{f:[KP(35, HF), KP(8, HF)], t:[1.0,0.9]},
+    flexao:{f:[PL(22, HF), PL(4, HF)], t:[1.0,0.9]},
+    flexDiamante:{f:[PL(22,{hand:[0.40,0.03]}), PL(4,{hand:[0.40,0.03]})], t:[1.3,1.0]},
+    flexDeclinada:{props:[{k:'bench', x0:-1.3, x1:-0.85, h:0.44}], f:[PL(3,{A:[-0.95,0.52], ...HF}), PL(-14,{A:[-0.95,0.52], ...HF})], t:[1.0,0.9]},
+    flexArqueiro:{f:[PL(22, HF), PL(3, HF), PL(3, HF)], t:[1.4,0.5,1.0]},
+    mergulhoCadeira:{props:[{k:'chair', x0:-0.6, x1:-0.22, h:0.45, back:'l'}], f:[
+      {hip:[-0.264,0.562], T:175, aN:pin(-0.25,0.48,-1), aF:pin(-0.275,0.48,-1), lN:pin(0.40,0.085), lF:pin(0.37,0.085)},
+      {hip:[-0.224,0.30], T:175, aN:pin(-0.25,0.48,-1), aF:pin(-0.275,0.48,-1), lN:pin(0.40,0.085), lF:pin(0.37,0.085)}], t:[1.1,0.9]},
+    pranchaSobeDesce:{f:[PL(10,{aN:[0,90], aF:[0,92]}), PL(22,{aN:[0,0], aF:[0,0]})], t:[0.8,0.8]},
+
+    sentaLevanta:{props:[{k:'chair', x0:-0.66, x1:-0.26, h:0.45, back:'l'}], f:[ST({aN:[80,85], aF:[75,80]}), ST({hip:[-0.34,0.50], T:150, aN:[85,90], aF:[80,85]}), ST({hip:[-0.34,0.50], T:150, aN:[85,90], aF:[80,85]})], t:[1.2,0.4,1.0]},
+    agachamento:{f:[ST({aN:[10,15]}), SQ], t:[1.2,0.9]},
+    agachPausa:{f:[ST({aN:[10,15]}), SQ, SQ], t:[1.2,2.0,0.9]},
+    afundo:{f:[ST(), {hip:[0,0.50], T:178, lN:pin(0.38,0.085), lF:pin(-0.42,0.13), ftF:40, aN:[-10,10], aF:[10,20]}, ST(), {hip:[0,0.50], T:178, lN:pin(-0.42,0.13), lF:pin(0.38,0.085), ftN:40, aN:[10,20], aF:[-10,10]}], t:[0.8,0.8,0.8,0.8]},
+    bulgaro:{props:[{k:'bench', x0:-0.80, x1:-0.44, h:0.40}], f:[
+      {hip:[-0.10,0.86], T:180, lN:pin(0.18,0.085), lF:pin(-0.50,0.47), ftF:-100, aN:[10,15], aF:[-8,4]},
+      {hip:[-0.16,0.52], T:172, lN:pin(0.18,0.085), lF:pin(-0.50,0.47), ftF:-100, aN:[30,40], aF:[20,30]}], t:[1.2,0.9]},
+    agachSalto:{f:[ST({hip:[-0.28,0.50], T:145, aN:[-40,-25], aF:[-35,-20]}), ST({hip:[0,1.08], lN:pin(0.03,0.24), lF:pin(-0.03,0.24), ftN:30, ftF:30, aN:[170,175], aF:[165,170]})], t:[0.38,0.5]},
+    pistolAssist:{f:[ST({lN:pin(0.04,0.085), lF:[25,25], aN:[60,70], aF:[55,65]}), ST({hip:[-0.26,0.42], T:140, lN:pin(0.04,0.085), lF:[80,88], aN:[90,90], aF:[85,85]})], t:[1.4,1.0]},
+    ponte:{f:[SUP(BR), SUP({T:-65, ...BR}), SUP({T:-65, ...BR})], t:[1.0,0.6,0.8]},
+    ponteUni:{f:[SUP({lN:pin(0.62,0.085), lF:[135,135]}), SUP({T:-65, lN:pin(0.62,0.085), lF:[115,115]}), SUP({T:-65, lN:pin(0.62,0.085), lF:[115,115]})], t:[1.0,0.6,0.8]},
+    wallSit:{props:[{k:'wall', x:-0.27, side:'l'}], f:[{hip:[-0.14,0.50], T:180, lN:pin(0.30,0.085), lF:pin(0.27,0.085), aN:[60,100], aF:[55,95]}, {hip:[-0.14,0.51], T:180, lN:pin(0.30,0.085), lF:pin(0.27,0.085), aN:[60,100], aF:[55,95]}], t:[1.5,1.5]},
+    panturrilha:{f:[ST(), ST({hip:[0,0.975], lN:pin(0.03,0.14), lF:pin(-0.03,0.14), ftN:45, ftF:45})], t:[0.8,0.9]},
+
+    superY:{f:[PR(), PR({T:102, H:5, lN:[-96,-96], lF:[-95,-95], aN:[120,120], aF:[118,118]}), PR({T:102, H:5, lN:[-96,-96], lF:[-95,-95], aN:[120,120], aF:[118,118]})], t:[1.0,0.8,0.8]},
+    snowAngel:{v:'front', top:true, props:[{k:'matTop', x0:-1.25, x1:0.75, y0:-0.5, y1:0.5}], f:[
+      {hip:[-0.2,0], T:90, mirror:false, aN:[80,80], aF:[100,100], lN:[-95,-95], lF:[-85,-85]},
+      {hip:[-0.2,0], T:90, mirror:false, aN:[-75,-75], aF:[-105,-105], lN:[-95,-95], lF:[-85,-85]}], t:[1.4,1.4]},
+    toalhaIso:{f:[ST({aN:[75,85], aF:[72,82], towel:1}), ST({aN:[15,105], aF:[12,102], towel:1}), ST({aN:[15,105], aF:[12,102], towel:1})], t:[1.0,0.8,0.8]},
+    remadaMesaJoelhos:{props:[{k:'table', x0:0.18, x1:1.0, h:0.75}], f:[FS([0.24,0.17], 82, ROW), FS([0.24,0.55], 112, ROW)], t:[1.0,1.0]},
+    remadaMesa:{props:[{k:'table', x0:0.18, x1:1.0, h:0.75}], f:[PL(19.3,{A:[-1.02,0.10], hand:[0.22,0.73], hd:1, face:-1, ftN:180, ftF:180}), PL(3,{A:[-1.02,0.10], hand:[0.22,0.73], hd:1, face:-1, ftN:180, ftF:180})], t:[1.0,1.0]},
+    remadaMesaPes:{props:[{k:'table', x0:0.26, x1:1.05, h:0.75}, {k:'chair', x0:-1.15, x1:-0.82, h:0.45}], f:[PL(2,{A:[-1.0,0.50], hand:[0.30,0.73], hd:1, face:-1, ftN:150, ftF:150}), PL(-14,{A:[-1.0,0.50], hand:[0.30,0.73], hd:1, face:-1, ftN:150, ftF:150})], t:[1.0,1.0]},
+
+    deadBug:{f:[SUP(DB), SUP({...DB, aN:[-80,-80], lF:[100,100]}), SUP(DB), SUP({...DB, aF:[-80,-80], lN:[100,100]})], t:[0.9,0.9,0.9,0.9]},
+    birdDog:{f:[QD(), QD({aN:[95,95], lF:[-92,-92]}), QD(), QD({aF:[95,95], lN:[-92,-92]})], t:[0.9,0.9,0.9,0.9]},
+    pranchaJoelhos:{f:[KP(17,{aN:[0,90], aF:[0,92]}), KP(18,{aN:[0,90], aF:[0,92]})], t:[1.6,1.6]},
+    prancha:{f:[PL(10,{aN:[0,90], aF:[0,92]}), PL(10.8,{aN:[0,90], aF:[0,92]})], t:[1.6,1.6]},
+    pranchaToque:{f:[PB, PL(22,{aN:[20,190]}), PB, PL(22,{aF:[20,190]})], t:[0.45,0.45,0.45,0.45]},
+    hollow:{f:[SUP({T:-100, ha:-100, aN:[-80,-80], aF:[-82,-82], lN:[100,100], lF:[98,98], g:true}), SUP({T:-96, ha:-96, aN:[-84,-84], aF:[-86,-86], lN:[96,96], lF:[94,94], g:true})], t:[1.4,1.4]},
+    pranchaLateral:{v:'front', f:[{hip:[0,0], T:120, mirror:false, aN:[0,0], aF:[180,180], lN:[-60,-60], lF:[-58,-58], g:true}, {hip:[0,0], T:116, mirror:false, aN:[0,0], aF:[180,180], lN:[-64,-64], lF:[-62,-62], g:true}], t:[1.2,1.2]},
+    elevPernas:{f:[SUP({lN:[95,95], lF:[94,94]}), SUP({lN:[178,178], lF:[176,176]})], t:[1.2,1.0]},
+    vUp:{f:[SUP({aN:[-85,-85], aF:[-87,-87], lN:[93,93], lF:[93,93], g:true}), SUP({T:-140, ha:-150, aN:[135,135], aF:[133,133], lN:[140,140], lF:[140,140], g:true})], t:[0.8,0.8]},
+    bicicleta:{f:[SUP({T:-108, ha:-118, aN:[-140,40], aF:[-145,45], lN:[150,70], lF:[100,100], g:true}), SUP({T:-108, ha:-118, aN:[-140,40], aF:[-145,45], lN:[100,100], lF:[150,70], g:true})], t:[0.55,0.55]},
+
+    boxe:{f:[ST(GU), ST({...GU, aN:[88,90]}), ST(GU), ST({...GU, aF:[88,90]})], t:[0.16,0.24,0.16,0.24]},
+    escaladorLento:{f:[PB, PL(22,{lN:[35,-80]}), PB, PL(22,{lF:[35,-80]})], t:[0.7,0.7,0.7,0.7]},
+    escalador:{f:[PL(22,{lN:[35,-80]}), PL(22,{lF:[35,-80]})], t:[0.26,0.26]},
+    burpeeSem:{f:[BS, BQ, BP, BQ], t:[0.4,0.3,0.3,0.45]},
+    burpee:{f:[BS, BQ, BP, BD, BP, BQ, BJ], t:[0.35,0.25,0.3,0.3,0.25,0.3,0.4]},
+    skater:{v:'front', f:[
+      {hip:[0.35,0], T:172, aN:[-35,-35], aF:[40,45], lN:[6,-12], lF:[-30,-40], g:true},
+      {hip:[0,0], T:180, aN:[5,5], aF:[5,5], lN:[6,6], lF:[6,6], g:true, lift:0.12},
+      {hip:[-0.35,0], T:188, aN:[40,45], aF:[-35,-35], lN:[-30,-40], lF:[6,-12], g:true},
+      {hip:[0,0], T:180, aN:[5,5], aF:[5,5], lN:[6,6], lF:[6,6], g:true, lift:0.12}], t:[0.25,0.25,0.25,0.25]},
+
+    peitoralParede:{v:'front', props:[{k:'wall', x:0.52, side:'r'}], f:[{hip:[0,0.92], ...FX, aN:[90,180]}, {hip:[-0.04,0.92], ...FX, T:176, aN:[90,175]}], t:[2,2]},
+    crianca:{f:[{hip:[-0.1,0], T:80, H:5, C:0.04, lN:[80,-90], lF:[82,-92], aN:[95,95], aF:[93,93], g:true}, {hip:[-0.1,0], T:84, H:5, C:0.05, lN:[80,-90], lF:[82,-92], aN:[95,95], aF:[93,93], g:true}], t:[2.5,2.5]},
+    posterior:{f:[{hip:[0,0], T:175, lN:[90,90], lF:[90,90], aN:[60,70], aF:[58,68], g:true}, {hip:[0,0], T:125, H:-15, C:0.06, lN:[90,90], lF:[90,90], aN:[100,95], aF:[98,93], g:true}, {hip:[0,0], T:125, H:-15, C:0.06, lN:[90,90], lF:[90,90], aN:[100,95], aF:[98,93], g:true}], t:[1.6,1.5,1.2]},
+    flexorQuadril:{f:[{hip:[0,0.48], T:180, lN:pin(0.42,0.085), lF:[-20,-90], aN:[10,10], aF:[5,5]}, {hip:[0.10,0.45], T:185, lN:pin(0.42,0.085), lF:[-32,-90], aN:[175,178], aF:[172,176]}, {hip:[0.10,0.45], T:185, lN:pin(0.42,0.085), lF:[-32,-90], aN:[175,178], aF:[172,176]}], t:[1.4,1.2,1.2]},
+    torcao:{v:'front', top:true, props:[{k:'matTop', x0:-0.75, x1:1.15, y0:-0.5, y1:0.5}], f:[
+      {hip:[0.2,0], T:-90, mirror:false, aN:[180,180], aF:[0,0], lN:[40,100], lF:[45,105]},
+      {hip:[0.2,0], T:-90, mirror:false, aN:[180,180], aF:[0,0], lN:[40,100], lF:[45,105]},
+      {hip:[0.2,0], T:-90, mirror:false, aN:[180,180], aF:[0,0], lN:[140,80], lF:[135,75]},
+      {hip:[0.2,0], T:-90, mirror:false, aN:[180,180], aF:[0,0], lN:[140,80], lF:[135,75]}], t:[1.6,1.2,1.6,1.2]},
+    respiracao:{f:[SUP({...BR, aN:pin(0.08,0.29), B:0}), SUP({...BR, aN:pin(0.08,0.31), B:1})], t:[4,6]}
+  };
+  for(const k in S){ S[k].f = S[k].f.map(p => Object.assign({}, DEF, p)); S[k].v = S[k].v || 'side'; }
+
+  /* cores */
+  const hex = h => { h = (h||'#888888').trim().replace('#',''); if(h.length===3) h = h.split('').map(c => c+c).join(''); const n = parseInt(h,16); return [n>>16&255, n>>8&255, n&255]; };
+  const mix = (c, k) => { const t = k<0 ? 0 : 255, a = Math.abs(k); return `rgb(${c.map(v => Math.round(v + (t-v)*a)).join(',')})`; };
+  const dk = (c, k) => c.map(v => Math.round(v*(1-k)));
+  let COL = null;
+  function readCol(){
+    const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
+    COL = {skin:hex(g('--fig-skin')), top:hex(g('--fig-top')), bot:hex(g('--fig-bottom')), shoe:hex(g('--fig-shoe')), hair:hex(g('--fig-hair')),
+      prop:hex(g('--fig-prop')), floor:g('--fig-floor') || '#ccc', shadow:g('--fig-shadow') || 'rgba(0,0,0,.15)', bg:g('--demo-bg') || '#fff', ink:g('--muted') || '#666'};
+  }
+
+  /* desenho */
+  function cap(ctx, A, B, wa, wb, c){
+    const v = [B[0]-A[0], B[1]-A[1]], d = Math.hypot(v[0], v[1]) || 1e-6; let n = [-v[1]/d, v[0]/d];
+    if(n[0]*-0.6 + n[1]*-0.8 < 0) n = [-n[0], -n[1]];
+    const w = Math.max(wa, wb)/2, m = [(A[0]+B[0])/2, (A[1]+B[1])/2];
+    const g = ctx.createLinearGradient(m[0]-n[0]*w, m[1]-n[1]*w, m[0]+n[0]*w, m[1]+n[1]*w);
+    g.addColorStop(0, mix(c,-0.4)); g.addColorStop(0.5, mix(c,0)); g.addColorStop(0.82, mix(c,0.25)); g.addColorStop(1, mix(c,0.06));
+    ctx.fillStyle = g; ctx.beginPath();
+    ctx.moveTo(A[0]+n[0]*wa/2, A[1]+n[1]*wa/2); ctx.lineTo(B[0]+n[0]*wb/2, B[1]+n[1]*wb/2);
+    ctx.lineTo(B[0]-n[0]*wb/2, B[1]-n[1]*wb/2); ctx.lineTo(A[0]-n[0]*wa/2, A[1]-n[1]*wa/2); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(A[0], A[1], wa/2, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(B[0], B[1], wb/2, 0, 7); ctx.fill();
+  }
+  function ball(ctx, C, r, c){
+    const g = ctx.createRadialGradient(C[0]-r*0.35, C[1]-r*0.4, r*0.1, C[0], C[1], r);
+    g.addColorStop(0, mix(c,0.3)); g.addColorStop(0.6, mix(c,0)); g.addColorStop(1, mix(c,-0.35));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(C[0], C[1], r, 0, 7); ctx.fill();
+  }
+  function drawProps(ctx, props, X, s){
+    for(const pr of props||[]){
+      const c = COL.prop;
+      const box = (x0, y0, x1, y1, col, rad) => { const a = X([x0,y1]), b = X([x1,y0]);
+        const g = ctx.createLinearGradient(a[0], a[1], a[0], b[1]); g.addColorStop(0, mix(col,0.18)); g.addColorStop(1, mix(col,-0.2));
+        ctx.fillStyle = g; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(a[0], a[1], b[0]-a[0], b[1]-a[1], rad||2); else ctx.rect(a[0], a[1], b[0]-a[0], b[1]-a[1]); ctx.fill(); };
+      if(pr.k==='wall'){ pr.side==='l' ? box(pr.x-0.12, 0, pr.x, 2.1, c, 2) : box(pr.x, 0, pr.x+0.12, 2.1, c, 2); }
+      if(pr.k==='chair'){ box(pr.x0, pr.h-0.05, pr.x1, pr.h, c, 3); box(pr.x0+0.02, 0, pr.x0+0.05, pr.h-0.05, dk(c,0.15)); box(pr.x1-0.05, 0, pr.x1-0.02, pr.h-0.05, dk(c,0.15));
+        if(pr.back==='l') box(pr.x0, pr.h, pr.x0+0.04, pr.h+0.42, c, 3); if(pr.back==='r') box(pr.x1-0.04, pr.h, pr.x1, pr.h+0.42, c, 3); }
+      if(pr.k==='bench') box(pr.x0, 0, pr.x1, pr.h, c, 6);
+      if(pr.k==='table'){ box(pr.x0, pr.h-0.04, pr.x1, pr.h, c, 2); box(pr.x0+0.04, 0, pr.x0+0.07, pr.h-0.04, dk(c,0.15)); box(pr.x1-0.07, 0, pr.x1-0.04, pr.h-0.04, dk(c,0.15)); }
+      if(pr.k==='matTop') box(pr.x0, pr.y0, pr.x1, pr.y1, hex(COL.floor), 10);
+    }
+  }
+  function render(st){
+    const {cv, spec, cam} = st, ctx = cv.getContext('2d'), W = cv.width, H = cv.height, dpr = st.dpr;
+    ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,W,H);
+    const X = q => [cam.ox + q[0]*cam.s, cam.oy - q[1]*cam.s], s = cam.s;
+    if(!spec){ ctx.fillStyle = COL.ink; ctx.font = `${14*dpr}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.fillText('Animação indisponível', W/2, H/2); return; }
+    const tt = ((performance.now() - st.t0)/1000) % st.total; let acc = 0, i = 0;
+    while(i < spec.t.length-1 && acc + spec.t[i] <= tt){ acc += spec.t[i]; i++; }
+    const e = ease(Math.min(1, (tt-acc)/spec.t[i])), p = lv(spec.f[i], spec.f[(i+1)%spec.f.length], e, '');
+    const o = fk(p, spec.v);
+    if(!spec.top){ // chão
+      const y0 = X([0,0])[1]; ctx.fillStyle = COL.floor; ctx.fillRect(0, y0, W, Math.max(2*dpr, 3*dpr));
+      ctx.globalAlpha = 0.35; ctx.fillRect(0, y0, W, H-y0); ctx.globalAlpha = 1;
+    }
+    drawProps(ctx, spec.props, X, s);
+    if(!spec.top){ const xs = [o.hip[0], o.leg.N[1][0], o.leg.F[1][0], o.head[0]]; const cx = (Math.min(...xs)+Math.max(...xs))/2, wv = Math.max(0.35, (Math.max(...xs)-Math.min(...xs))/2+0.15);
+      const c0 = X([cx,0]); ctx.fillStyle = COL.shadow; ctx.beginPath(); ctx.ellipse(c0[0], c0[1], wv*s, 0.035*s, 0, 0, 7); ctx.fill(); }
+    const skin = COL.skin, top = COL.top, bot = COL.bot, shoe = COL.shoe;
+    const legD = (l, f) => { const k = f ? 0.2 : 0; cap(ctx, X(o.view==='front' ? (l===o.leg.N ? o.hp.N : o.hp.F) : o.hip), X(l[0]), 0.15*s, 0.11*s, dk(bot,k)); cap(ctx, X(l[0]), X(l[1]), 0.105*s, 0.075*s, dk(bot,k));
+      cap(ctx, X(l[1]), X(l[4]), 0.075*s, 0.055*s, dk(shoe, k+0.04)); };
+    const armD = (a, root, f) => { const k = f ? 0.2 : 0; cap(ctx, X(root), X(a[0]), 0.088*s, 0.07*s, dk(skin,k));
+      const mid = [root[0]+(a[0][0]-root[0])*0.45, root[1]+(a[0][1]-root[1])*0.45]; cap(ctx, X(root), X(mid), 0.1*s, 0.092*s, dk(top,k));
+      cap(ctx, X(a[0]), X(a[1]), 0.07*s, 0.055*s, dk(skin,k)); ball(ctx, X(a[1]), 0.036*s, dk(skin,k));
+      if(p.towel && !f){ const h = X(a[1]); ctx.fillStyle = mix(COL.prop,0.35); ctx.fillRect(h[0]-0.02*s, h[1]-0.09*s, 0.04*s, 0.18*s); } };
+    const headD = () => { const hc = X(o.head), r = L.HR*s; ball(ctx, hc, r, skin);
+      const ax = dA(p.T + (p.H||0)); const fr = o.view==='front' ? null : ((p.face||1) > 0 ? [ax[1], -ax[0]] : [-ax[1], ax[0]]);
+      // cabelo: calota na parte de trás/topo
+      const back = fr ? [ax[0]-fr[0]*0.9, ax[1]-fr[1]*0.9] : ax; const ang = Math.atan2(-back[1], back[0]);
+      ctx.fillStyle = mix(COL.hair,0); ctx.beginPath(); ctx.arc(hc[0], hc[1], r*1.03, ang-1.45, ang+1.45); ctx.closePath(); ctx.fill();
+      if(fr){ const n0 = X(ad(o.head, ml(fr, L.HR*0.92))), n1 = X(ad(ad(o.head, ml(fr, L.HR*1.18)), ml(ax, -0.015)));
+        ctx.fillStyle = mix(skin,-0.12); ctx.beginPath(); ctx.arc((n0[0]+n1[0])/2, (n0[1]+n1[1])/2, 0.022*s, 0, 7); ctx.fill(); } };
+    if(o.view==='front'){
+      legD(o.leg.F, false); legD(o.leg.N, false);
+      const pp = o.pp, sc = o.sc, hp = o.hip;
+      const q = [ad(sc, ml(pp,0.21)), ad(sc, ml(pp,-0.21)), ad(hp, ml(pp,-0.16)), ad(hp, ml(pp,0.16))].map(X);
+      const g = ctx.createLinearGradient(q[1][0], q[1][1], q[0][0], q[0][1]); g.addColorStop(0, mix(top,-0.3)); g.addColorStop(0.5, mix(top,0.12)); g.addColorStop(1, mix(top,-0.3));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(...q[0]); q.slice(1).forEach(z => ctx.lineTo(...z)); ctx.closePath(); ctx.fill();
+      cap(ctx, X(ad(hp, ml(pp,0.15))), X(ad(hp, ml(pp,-0.15))), 0.12*s, 0.12*s, bot);
+      cap(ctx, X(sc), X(o.head), 0.07*s, 0.07*s, skin); headD();
+      armD(o.arm.F, o.sh.F, false); armD(o.arm.N, o.sh.N, false);
+    } else {
+      legD(o.leg.F, true); armD(o.arm.F, o.shc, true);
+      // tronco curvo
+      const h0 = o.hip, s1 = o.shc, ch = sb(s1, h0), cl = ln(ch) || 1e-6, nrm = [-ch[1]/cl, ch[0]/cl];
+      const ctl = ad(ml(ad(h0, s1), 0.5), ml(nrm, (p.C||0)*2));
+      const N = 10, P = [], Wd = [];
+      for(let j=0; j<=N; j++){ const t = j/N; const a1 = ml(h0,(1-t)*(1-t)), a2 = ml(ctl, 2*t*(1-t)), a3 = ml(s1, t*t); P.push(ad(ad(a1,a2),a3)); Wd.push(0.24 + 0.05*t + (p.B||0)*0.05*Math.sin(Math.PI*t)); }
+      const side = (sg) => P.map((q,j) => { const nx = j<N ? sb(P[j+1], q) : sb(q, P[j-1]); const l2 = ln(nx) || 1e-6; return ad(q, ml([-nx[1]/l2, nx[0]/l2], sg*Wd[j]/2)); });
+      const A1 = side(1), A2 = side(-1).reverse();
+      cap(ctx, X(h0), X(ad(h0, ml(ch, 0.12))), 0.23*s, 0.22*s, bot);
+      let n2 = [-ch[1]/cl, ch[0]/cl]; const sn = [n2[0], -n2[1]]; if(sn[0]*-0.6 + sn[1]*-0.8 < 0) n2 = [-n2[0], -n2[1]];
+      const m2 = X(ml(ad(h0, s1), 0.5)), ww = 0.15*s, nn = [n2[0], -n2[1]];
+      const g = ctx.createLinearGradient(m2[0]-nn[0]*ww, m2[1]-nn[1]*ww, m2[0]+nn[0]*ww, m2[1]+nn[1]*ww);
+      g.addColorStop(0, mix(top,-0.4)); g.addColorStop(0.5, mix(top,0)); g.addColorStop(0.82, mix(top,0.25)); g.addColorStop(1, mix(top,0.06));
+      ctx.fillStyle = g; ctx.beginPath(); [...A1, ...A2].map(X).forEach((z,j) => j ? ctx.lineTo(...z) : ctx.moveTo(...z)); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); const sc2 = X(s1); ctx.arc(sc2[0], sc2[1], Wd[N]/2*s, 0, 7); ctx.fill();
+      cap(ctx, X(h0), X(ad(h0, ml(ch, 0.1))), 0.23*s, 0.22*s, bot);
+      legD(o.leg.N, false);
+      cap(ctx, X(s1), X(o.head), 0.075*s, 0.075*s, skin); headD();
+      armD(o.arm.N, o.shc, false);
+    }
+  }
+
+  function bounds(spec){
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    const take = (x,y) => { x0 = Math.min(x0,x); x1 = Math.max(x1,x); y0 = Math.min(y0,y); y1 = Math.max(y1,y); };
+    const n = spec.f.length;
+    for(let i=0; i<n; i++) for(const t of [0, 0.5]){ const o = fk(lv(spec.f[i], spec.f[(i+1)%n], t, ''), spec.v); for(const [q,r] of pts(o)) { take(q[0]-r, q[1]-r); take(q[0]+r, q[1]+r); } }
+    for(const pr of spec.props||[]){ if(pr.k==='wall') take(pr.x + (pr.side==='l' ? -0.12 : 0.12), y0); else if(pr.k==='matTop'){ take(pr.x0, pr.y0); take(pr.x1, pr.y1); } else { take(pr.x0, pr.h); take(pr.x1, 0); } }
+    if(!spec.top) take(x0, 0);
+    return {x0, x1, y0, y1};
+  }
+  const mounted = new Map(); let raf = 0, frameN = 0;
+  function fit(st){
+    const cv = st.cv, dpr = Math.min(2, window.devicePixelRatio || 1), w = cv.clientWidth || 320, h = cv.clientHeight || 200;
+    cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); st.dpr = dpr; st.cw = w; st.ch = h;
+    if(!st.spec){ st.cam = {s:1, ox:0, oy:0}; return; }
+    const b = st.bounds, pad = 0.18, bw = b.x1-b.x0 + pad*2, bh = b.y1-b.y0 + pad*2;
+    const s = Math.min(cv.width/bw, cv.height/bh);
+    st.cam = {s, ox: cv.width/2 - ((b.x0+b.x1)/2)*s, oy: cv.height/2 + ((b.y0+b.y1)/2)*s};
+  }
+  function loop(){
+    raf = 0; if(!mounted.size) return;
+    if(!COL || frameN++ % 90 === 0) readCol();
+    for(const st of mounted.values()){
+      if(!st.cv.isConnected){ mounted.delete(st.cv); continue; }
+      if(st.cv.clientWidth !== st.cw || st.cv.clientHeight !== st.ch) fit(st);
+      try{ render(st); }catch(e){}
+    }
+    raf = requestAnimationFrame(loop);
+  }
+  return {
+    has: id => !!S[id],
+    mount(cv, id){ if(!cv) return; const spec = S[id] || null;
+      const st = {cv, id, spec, t0: performance.now(), total: spec ? spec.t.reduce((a,b)=>a+b,0) : 1, bounds: spec ? bounds(spec) : null};
+      mounted.set(cv, st); readCol(); fit(st); if(!raf) raf = requestAnimationFrame(loop); },
+    unmount(cv){ if(cv) mounted.delete(cv); },
+    current: cv => mounted.has(cv) ? mounted.get(cv).id : null,
+    _fk: fk, _S: S, _lv: lv, _bounds: bounds
+  };
+})();
+
+/* ---------- janela "como fazer" ---------- */
+const SITE = !!window.__SITE__;
+let howId = null, howTab = 'video';
+function openHow(id){
+  if(!E[id]) return;
+  howId = id; howTab = (SITE && navigator.onLine !== false && V[id]) ? 'video' : 'anim';
+  if(TS && TS.running && !TS.finished){ TS.running = false; drawTimer(); }
+  $('#howT').textContent = E[id].n; $('#howCue').textContent = E[id].c;
+  $('#how').hidden = false; renderHow(); $('#howX').focus({preventScroll:true});
+}
+function renderHow(){
+  document.querySelectorAll('#how [data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab===howTab)));
+  Demo.unmount(document.getElementById('howCanvas'));
+  const v = V[howId], body = $('#howBody');
+  if(howTab==='video'){
+    if(!v) body.innerHTML = '<p class="muted">Ainda não há vídeo para este exercício. Veja a animação.</p>';
+    else if(SITE) body.innerHTML = `<div class="vid"><iframe src="https://www.youtube-nocookie.com/embed/${v[0]}?rel=0&playsinline=1&modestbranding=1" title="${v[1].replace(/"/g,'&quot;')}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><p class="note">Vídeo do YouTube: “${v[1]}”. Precisa de internet. Sem conexão, use a aba Animação.</p>`;
+    else body.innerHTML = `<div class="vid-off"><p>Esta prévia não permite vídeo embutido. No app publicado o vídeo toca aqui dentro, sem sair do app.</p><a class="btn small ghost" href="https://www.youtube.com/watch?v=${v[0]}" target="_blank" rel="noopener">Abrir no YouTube</a></div>`;
+  } else {
+    body.innerHTML = '<canvas class="demo" id="howCanvas" role="img" aria-label="Animação do exercício"></canvas><p class="note">Animação feita pelo próprio app, em loop. Funciona sem internet.</p>';
+    Demo.mount(document.getElementById('howCanvas'), howId);
+  }
+}
+function closeHow(){ Demo.unmount(document.getElementById('howCanvas')); $('#howBody').innerHTML = ''; $('#how').hidden = true; }
+document.querySelectorAll('#how [data-tab]').forEach(b => b.addEventListener('click', () => { howTab = b.dataset.tab; renderHow(); }));
+$('#howX').addEventListener('click', closeHow);
+$('#how').addEventListener('click', e => { if(e.target.id==='how') closeHow(); });
 
 /* ---------- treino guiado ---------- */
 let TS = null, tick = null, audio = null, wake = null;
@@ -885,9 +1302,13 @@ function drawTimer(){
     $('#tph').textContent = 'Fim'; $('#tstep').textContent = '';
     $('#tnm').textContent = 'Treino concluído'; $('#tcue').textContent = `Dia ${TS.day.n}: ${TYPES[TS.day.s.type].t}.`;
     $('#tclk').textContent = '✓'; $('#tnx').textContent = PLAN.done.has(TS.day.n) ? 'Este dia já está marcado como feito.' : 'Toque em "Concluir" para marcar o dia como feito.';
-    $('#tbar').style.width = '100%'; $('#tplay').textContent = 'Concluir'; return;
+    $('#tbar').style.width = '100%'; $('#tplay').textContent = 'Concluir';
+    Demo.unmount($('#tdemo')); $('#tdemo').hidden = true; $('#tvid').hidden = true; return;
   }
   const st = TS.steps[TS.i];
+  const did = st.rest ? st.nextId : st.id;
+  $('#tdemo').hidden = false; $('#tvid').hidden = false; TS.demoId = did;
+  if(Demo.current($('#tdemo')) !== did) Demo.mount($('#tdemo'), did);
   t.classList.toggle('rest', !!st.rest);
   $('#tph').textContent = st.ph; $('#tstep').textContent = `${TS.i+1}/${TS.steps.length}`;
   $('#tbar').style.width = (TS.i/TS.steps.length*100)+'%';
@@ -900,6 +1321,7 @@ function drawTimer(){
 }
 function closeTimer(){
   clearInterval(tick); TS = null; $('#timer').hidden = true; document.body.style.overflow = '';
+  Demo.unmount($('#tdemo')); if(!$('#how').hidden) closeHow();
   try{ wake && wake.release(); }catch(e){} wake = null;
 }
 $('#tplay').addEventListener('click', () => {
@@ -909,7 +1331,8 @@ $('#tplay').addEventListener('click', () => {
 $('#tskip').addEventListener('click', () => { if(TS && !TS.finished) goStep(TS.i+1); });
 $('#tprev').addEventListener('click', () => { if(TS){ TS.finished = false; goStep(TS.i-1); } });
 $('#tclose').addEventListener('click', closeTimer);
-document.addEventListener('keydown', e => { if(e.key==='Escape' && TS) closeTimer(); });
+$('#tvid').addEventListener('click', () => { if(TS && TS.demoId) openHow(TS.demoId); });
+document.addEventListener('keydown', e => { if(e.key!=='Escape') return; if(!$('#how').hidden) closeHow(); else if(TS) closeTimer(); });
 
 /* ---------- início ---------- */
 function initStart(){
