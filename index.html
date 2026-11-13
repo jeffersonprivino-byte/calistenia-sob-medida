@@ -282,6 +282,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     <div class="row"><button class="btn small ghost" type="button" id="tvid">▶ Ver vídeo do exercício</button></div>
     <div class="clk" id="tclk">0:00</div>
     <p class="nx" id="tnx"></p>
+    <div class="row" id="tvivazrow" hidden style="justify-content:center"><a class="btn" id="tvivaz" target="_blank" rel="noopener" style="background:#C6FF3D;color:#0A0B0D">⚡ Enviar treino ao Vivaz</a></div>
     <div class="ctl">
       <button class="btn ghost" id="tprev" type="button">Voltar</button>
       <button class="btn" id="tplay" type="button">Pausar</button>
@@ -1279,7 +1280,7 @@ function beep(f, ms){
 function startTimer(d){
   try{ audio = audio || new (window.AudioContext||window.webkitAudioContext)(); audio.resume && audio.resume(); }catch(e){ audio = null; }
   try{ navigator.wakeLock && navigator.wakeLock.request('screen').then(w => wake = w).catch(()=>{}); }catch(e){}
-  TS = {day:d, steps:stepsFor(d), i:0, left:0, running:true, last:performance.now(), finished:false};
+  TS = {day:d, steps:stepsFor(d), i:0, left:0, running:true, last:performance.now(), finished:false, startedAt:Date.now()};
   TS.left = TS.steps[0].secs;
   $('#timer').hidden = false; document.body.style.overflow = 'hidden';
   drawTimer(); clearInterval(tick); tick = setInterval(loop, 200);
@@ -1303,8 +1304,14 @@ function drawTimer(){
     $('#tnm').textContent = 'Treino concluído'; $('#tcue').textContent = `Dia ${TS.day.n}: ${TYPES[TS.day.s.type].t}.`;
     $('#tclk').textContent = '✓'; $('#tnx').textContent = PLAN.done.has(TS.day.n) ? 'Este dia já está marcado como feito.' : 'Toque em "Concluir" para marcar o dia como feito.';
     $('#tbar').style.width = '100%'; $('#tplay').textContent = 'Concluir';
+    const ex = TS.steps.filter(x => !x.rest).length;
+    const mins = Math.max(1, Math.round((Date.now() - (TS.startedAt || Date.now())) / 60000));
+    const q = new URLSearchParams({ src: 'calistenia', nome: 'Calistenia · Dia ' + TS.day.n + ': ' + TYPES[TS.day.s.type].t, min: String(mins), ex: String(ex), fim: new Date().toISOString() });
+    $('#tvivaz').href = 'https://jeffersonprivino-byte.github.io/vivaz/#/treino/importar?' + q.toString();
+    $('#tvivazrow').hidden = false;
     Demo.unmount($('#tdemo')); $('#tdemo').hidden = true; $('#tvid').hidden = true; return;
   }
+  $('#tvivazrow').hidden = true;
   const st = TS.steps[TS.i];
   const did = st.rest ? st.nextId : st.id;
   $('#tdemo').hidden = false; $('#tvid').hidden = false; TS.demoId = did;
